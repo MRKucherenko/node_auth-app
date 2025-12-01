@@ -7,7 +7,7 @@ export const authRouter = new Router();
 authRouter.post('/auth/registration', catchError(authController.register));
 
 authRouter.get(
-  '/auth/activation/:email/:activationToken',
+  '/auth/activation/:activationToken',
   catchError(authController.activation),
 );
 authRouter.post('/auth/login', catchError(authController.login));

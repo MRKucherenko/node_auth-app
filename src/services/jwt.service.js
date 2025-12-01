@@ -1,31 +1,27 @@
 import jwt from 'jsonwebtoken';
 
 function sign(user) {
-  const token = jwt.sign(user, process.env.JWT_KEY, {
+  return jwt.sign(user, process.env.JWT_KEY, {
     expiresIn: '1h',
   });
-
-  return token;
 }
 
 function verify(token) {
   try {
     return jwt.verify(token, process.env.JWT_KEY);
-  } catch (error) {
+  } catch {
     return null;
   }
 }
 
 function signRefresh(user) {
-  const token = jwt.sign(user, process.env.JWT_REFRESH_KEY);
-
-  return token;
+  return jwt.sign(user, process.env.JWT_REFRESH_KEY);
 }
 
 function verifyRefresh(token) {
   try {
     return jwt.verify(token, process.env.JWT_REFRESH_KEY);
-  } catch (error) {
+  } catch {
     return null;
   }
 }

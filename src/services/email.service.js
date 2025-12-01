@@ -20,17 +20,18 @@ export function send({ email, subject, html }) {
 }
 
 function sendActivationEmail(email, token) {
-  const href = `${process.env.CLIENT_HOST}/activate/${email}/${token}`;
+  const href = `${process.env.CLIENT_HOST}/activate/${token}`;
 
   const html = `
-    <h1>Activate account</h1>
+    <h1>Activate your account</h1>
+    <p>Click the link to activate your account:</p>
     <a href="${href}">${href}</a>
   `;
 
   return send({
     email,
     html,
-    subject: 'Activate',
+    subject: 'Account Activation',
   });
 }
 
@@ -38,8 +39,8 @@ function sendResetPasswordEmail(email, token) {
   const href = `${process.env.CLIENT_HOST}/reset-password/${token}`;
 
   const html = `
-    <h1>Reset account password</h1>
-    <p>Click the link below to reset your password (valid for 10 minutes):</p>
+    <h1>Reset password</h1>
+    <p>Click below to reset the password (valid for 10 minutes):</p>
     <a href="${href}">${href}</a>
   `;
 
@@ -50,38 +51,39 @@ function sendResetPasswordEmail(email, token) {
   });
 }
 
-function sendChangeEmailNotification(email, token) {
-  const href = `${process.env.CLIENT_HOST}/activate-email/${email}/${token}`;
+function sendChangeEmailConfirmation(newEmail, token) {
+  const href = `${process.env.CLIENT_HOST}/activate-email/${token}`;
 
   const html = `
-    <h1>Change email address</h1>
+    <h1>Confirm email change</h1>
+    <p>Click below to confirm your new email address:</p>
     <a href="${href}">${href}</a>
   `;
 
   return send({
-    email,
+    email: newEmail,
     html,
-    subject: 'Email change',
+    subject: 'Confirm Email Change',
   });
 }
 
-function sendEmailNotification(email, newEmail) {
+function sendEmailNotification(oldEmail, newEmail) {
   const html = `
-    <h1>Your email address was changed</h1>
-    <p>New email ${newEmail}</p>
+    <h1>Your email was changed</h1>
+    <p>New email: ${newEmail}</p>
   `;
 
   return send({
-    email,
+    email: oldEmail,
     html,
-    subject: 'Email change',
+    subject: 'Email Change Notification',
   });
 }
 
 export const emailService = {
   sendActivationEmail,
   sendResetPasswordEmail,
-  sendChangeEmailNotification,
+  sendChangeEmailConfirmation,
   sendEmailNotification,
   send,
 };

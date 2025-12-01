@@ -1,5 +1,5 @@
 'use strict';
-'use strict';
+
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
@@ -24,7 +24,7 @@ app.use(cookieParser());
 app.use(authRouter);
 app.use('/user', userRouter);
 
-app.use((req, res, nest) => {
+app.use((req, res, next) => {
   res.status(404).json({ message: 'Not Found' });
 });
 
