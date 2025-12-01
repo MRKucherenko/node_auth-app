@@ -1,8 +1,10 @@
+/* eslint-disable no-undef */
 import { userService } from '../services/user.service.js';
 import { ApiError } from '../exeptions/api.error.js';
 import bcrypt from 'bcrypt';
 import { emailService } from '../services/email.service.js';
 import { User } from '../models/user.js';
+import { v4 as uuidv4 } from 'uuid';
 
 function validateEmail(value) {
   const EMAIL_PATTERN = /^[\w.+-]+@([\w-]+\.){1,3}[\w-]{2,}$/;
@@ -168,38 +170,46 @@ const sendNotificationEmail = async (req, res) => {
     });
   }
 
-  await userService.sendEmailChange(currentEmail, newEmail);
+  const token = uuidv4();
+
+  user.pendingNewEmail = newEmail;
+  user.activationEmailToken = token;
+  user.activationEmailExpires = Date.now() + 60 * 60 * 1000;
+  await user.save();
+
+  await emailService.sendChangeEmailConfirmation(newEmail, token);
 
   res.status(200).json({
-    message: 'Email send',
+    message: 'Email sent',
   });
 };
 
 const updateUserEmail = async (req, res) => {
-  const { newEmail, activationEmailToken } = req.params;
+  const { activationEmailToken } = req.params;
 
-  if (!newEmail || !activationEmailToken) {
+  if (!activationEmailToken) {
     return res.sendStatus(400);
   }
 
-  const tokenError = validateEmail(newEmail);
+  const user = await User.findOne({
+    where: {
+      activationEmailToken,
+      activationEmailExpires: { [Op.gt]: Date.now() },
+    },
+  });
 
-  if (tokenError) {
-    throw ApiError.badRequest('Bad request', { email: tokenError });
-  }
-
-  const user = await User.findOne({ where: { activationEmailToken } });
-
-  if (!user) {
-    res.sendStatus(404);
-
-    return;
+  if (!user || !user.pendingNewEmail) {
+    return res.sendStatus(404);
   }
 
   const oldEmail = user.email;
+  const newEmail = user.pendingNewEmail;
 
-  user.activationEmailToken = null;
   user.email = newEmail;
+  user.pendingNewEmail = null;
+  user.activationEmailToken = null;
+  user.activationEmailExpires = null;
+
   await user.save();
 
   await emailService.sendEmailNotification(oldEmail, newEmail);

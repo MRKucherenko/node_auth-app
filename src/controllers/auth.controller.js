@@ -117,25 +117,35 @@ const resetPassword = async (req, res) => {
   const { resetPasswordToken, password, confirmation } = req.body;
 
   if (password !== confirmation) {
-    throw ApiError.badRequest('Passwords is not equal');
+    throw ApiError.badRequest('Passwords are not equal');
   }
 
-  const user = await User.findOne({
+  const candidates = await User.findAll({
     where: {
+      resetPasswordToken: { [Op.ne]: null },
       resetPasswordExpires: { [Op.gt]: Date.now() },
     },
   });
 
-  if (!user) {
+  if (!candidates.length) {
     throw ApiError.badRequest('Token is invalid or has expired');
   }
 
-  const isTokenValid = await bcrypt.compare(
-    resetPasswordToken,
-    user.resetPasswordToken,
-  );
+  let user = null;
 
-  if (!isTokenValid) {
+  for (const candidate of candidates) {
+    const match = await bcrypt.compare(
+      resetPasswordToken,
+      candidate.resetPasswordToken,
+    );
+
+    if (match) {
+      user = candidate;
+      break;
+    }
+  }
+
+  if (!user) {
     throw ApiError.badRequest('Token is invalid or has expired');
   }
 
@@ -144,6 +154,7 @@ const resetPassword = async (req, res) => {
   user.password = hashedPass;
   user.resetPasswordToken = null;
   user.resetPasswordExpires = null;
+
   await user.save();
 
   res.status(200).json({
@@ -216,7 +227,7 @@ const refresh = async (req, res) => {
 const logout = async (req, res) => {
   const { refreshToken } = req.cookies;
 
-  const userData = await jwtService.verifyRefresh(refreshToken);
+  const userData = jwtService.verifyRefresh(refreshToken);
 
   if (!userData || !refreshToken) {
     throw ApiError.unauthorized();
